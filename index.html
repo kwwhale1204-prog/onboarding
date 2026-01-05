@@ -56,6 +56,10 @@
         const Star = (props) => <IconBase {...props}><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></IconBase>;
         const Phone = (props) => <IconBase {...props}><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></IconBase>;
         const Video = (props) => <IconBase {...props}><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></IconBase>;
+        const MessageSquare = (props) => <IconBase {...props}><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></IconBase>;
+        const Send = (props) => <IconBase {...props}><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></IconBase>;
+        const LogIn = (props) => <IconBase {...props}><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></IconBase>;
+        const Users = (props) => <IconBase {...props}><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></IconBase>;
 
         // --- Common Components ---
         const Button = ({ children, onClick, variant = 'primary', className = '', disabled = false }) => {
@@ -64,7 +68,9 @@
                 primary: "bg-indigo-900 text-white hover:bg-indigo-800 disabled:bg-indigo-300 disabled:cursor-not-allowed",
                 secondary: "bg-white text-indigo-900 border border-indigo-200 hover:bg-indigo-50",
                 outline: "border border-gray-300 text-gray-700 hover:bg-gray-50",
-                text: "text-indigo-600 hover:bg-indigo-50 px-4 py-2"
+                text: "text-indigo-600 hover:bg-indigo-50 px-4 py-2",
+                success: "bg-green-600 text-white hover:bg-green-700",
+                danger: "bg-red-500 text-white hover:bg-red-600"
             };
             return (
                 <button 
@@ -112,9 +118,9 @@
         // --- Views ---
 
         // 1. Landing View
-        const LandingView = ({ onStart }) => (
+        const LandingView = ({ onStart, onLoginClick }) => (
             <div className="min-h-screen flex flex-col items-center justify-center p-6 text-center animate-fade-in">
-                <div className="max-w-3xl space-y-8">
+                <div className="max-w-3xl space-y-8 w-full">
                 <div className="inline-flex items-center justify-center p-3 bg-indigo-100 rounded-full mb-4">
                     <Shield className="w-8 h-8 text-indigo-900" />
                 </div>
@@ -141,24 +147,105 @@
                     ))}
                 </div>
 
-                <div className="flex justify-center">
+                <div className="flex flex-col md:flex-row justify-center gap-4">
                     <Button onClick={onStart} className="w-full md:w-auto text-lg px-12 py-4 shadow-xl shadow-indigo-200">
                         전문가로 가입하기
+                    </Button>
+                    <Button onClick={onLoginClick} variant="secondary" className="w-full md:w-auto text-lg px-12 py-4">
+                        로그인
                     </Button>
                 </div>
                 </div>
             </div>
         );
 
+        // 1.5 Login View
+        const LoginView = ({ onLogin, onBack }) => {
+            const [email, setEmail] = useState('');
+            const [password, setPassword] = useState('');
+            const [error, setError] = useState('');
+
+            const handleSubmit = () => {
+                if (!email || !password) {
+                    setError('이메일과 비밀번호를 모두 입력해주세요.');
+                    return;
+                }
+                const result = onLogin(email, password);
+                if (!result.success) {
+                    setError(result.message || '이메일 또는 비밀번호가 일치하지 않습니다.');
+                }
+            };
+
+            return (
+                <div className="min-h-screen flex items-center justify-center p-4 animate-fade-in">
+                    <div className="bg-white max-w-md w-full rounded-2xl shadow-xl p-8 md:p-12">
+                        <div className="mb-8 text-center">
+                            <h2 className="text-2xl font-bold text-slate-900">로그인</h2>
+                            <p className="text-slate-500 mt-2">네스토리움 전문가 계정으로 접속하세요.</p>
+                        </div>
+                        
+                        <div className="space-y-4">
+                            <Input 
+                                label="이메일" 
+                                placeholder="example@nestorium.com" 
+                                value={email}
+                                onChange={(e) => {
+                                    setEmail(e.target.value);
+                                    setError('');
+                                }}
+                            />
+                            <Input 
+                                label="비밀번호" 
+                                type="password" 
+                                placeholder="********" 
+                                value={password}
+                                onChange={(e) => {
+                                    setPassword(e.target.value);
+                                    setError('');
+                                }}
+                            />
+                            
+                            {error && (
+                                <div className="text-red-500 text-sm bg-red-50 p-3 rounded-lg flex items-center gap-2">
+                                    <X className="w-4 h-4" /> {error}
+                                </div>
+                            )}
+
+                            <Button onClick={handleSubmit} className="w-full mt-4">로그인</Button>
+                            
+                            <div className="text-center mt-4 space-y-2">
+                                <button onClick={onBack} className="text-slate-400 hover:text-slate-600 text-sm underline block w-full">
+                                    처음으로 돌아가기
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <div className="mt-8 pt-6 border-t border-slate-100 text-center text-xs text-slate-400 space-y-1">
+                            <p>테스트 계정: demo@nestorium.com / 1234</p>
+                            <p className="font-bold text-indigo-400">관리자 계정: admin@nestorium.com / admin</p>
+                        </div>
+                    </div>
+                </div>
+            );
+        };
+
         // 2. Signup Wizard
-        const SignupWizard = ({ onComplete }) => {
+        const SignupWizard = ({ onComplete, onBack }) => {
             const [step, setStep] = useState(1);
             const [formData, setFormData] = useState({
-                name: '', email: '', type: '', tags: []
+                name: '', email: '', password: '', phone: '', type: '', tags: []
             });
 
             const handleNext = () => setStep(step + 1);
-            const handleBack = () => setStep(step - 1);
+            const handleBackBtn = () => {
+                if(step === 1) onBack();
+                else setStep(step - 1);
+            };
+
+            const professionList = [
+                '변호사', '법무사', '변리사', '세무사', '행정사',
+                '회계사', '노무사', '감정평가사', '관세사', '기타 전문직'
+            ];
 
             return (
                 <div className="min-h-screen flex items-center justify-center p-4">
@@ -174,15 +261,37 @@
                     {step === 1 && (
                     <div className="space-y-6">
                         <h3 className="text-lg font-semibold text-indigo-900 border-b pb-2">기본 정보 입력</h3>
-                        <Input label="이메일 (ID)" placeholder="example@nestorium.com" />
-                        <Input label="비밀번호" type="password" placeholder="********" />
-                        <Input label="휴대폰 번호" placeholder="010-0000-0000 (본인인증)" />
+                        <Input 
+                            label="이메일 (로그인 ID)" 
+                            placeholder="example@nestorium.com" 
+                            value={formData.email}
+                            onChange={(e) => setFormData({...formData, email: e.target.value})}
+                        />
+                        <Input 
+                            label="비밀번호" 
+                            type="password" 
+                            placeholder="로그인에 사용할 비밀번호 (4자 이상)" 
+                            value={formData.password}
+                            onChange={(e) => setFormData({...formData, password: e.target.value})}
+                        />
+                        <Input 
+                            label="휴대폰 번호" 
+                            placeholder="010-0000-0000 (본인인증)" 
+                            value={formData.phone}
+                            onChange={(e) => setFormData({...formData, phone: e.target.value})}
+                        />
                         <div className="flex items-start gap-2 text-sm text-slate-500 bg-slate-50 p-3 rounded">
                         <CheckCircle className="w-4 h-4 mt-0.5 text-green-500 flex-shrink-0" />
                         <span>휴대폰 본인인증을 통해 1차 신원 확인이 완료되었습니다.</span>
                         </div>
-                        <div className="pt-4 flex justify-end">
-                        <Button onClick={handleNext}>다음 단계 <ChevronRight className="w-4 h-4" /></Button>
+                        <div className="pt-4 flex justify-between">
+                            <Button variant="secondary" onClick={handleBackBtn}>취소</Button>
+                            <Button 
+                                onClick={handleNext} 
+                                disabled={!formData.email || formData.password.length < 4 || !formData.phone}
+                            >
+                                다음 단계 <ChevronRight className="w-4 h-4" />
+                            </Button>
                         </div>
                     </div>
                     )}
@@ -191,15 +300,15 @@
                     {step === 2 && (
                     <div className="space-y-6">
                         <h3 className="text-lg font-semibold text-indigo-900 border-b pb-2">전문 자격 인증</h3>
-                        <div className="grid grid-cols-2 gap-4">
-                        {['변호사', '세무사', '회계사', '변리사', '노무사', '경영지도사'].map((type) => (
+                        <div className="grid grid-cols-2 gap-3">
+                        {professionList.map((type) => (
                             <button 
                             key={type}
                             onClick={() => setFormData({...formData, type})}
-                            className={`p-4 rounded-lg border-2 text-left transition-all ${
+                            className={`p-3 rounded-lg border-2 text-center transition-all text-sm font-medium ${
                                 formData.type === type 
                                 ? 'border-indigo-600 bg-indigo-50 text-indigo-900 font-bold' 
-                                : 'border-slate-200 hover:border-indigo-200'
+                                : 'border-slate-200 hover:border-indigo-200 text-slate-600'
                             }`}
                             >
                             {type}
@@ -214,7 +323,7 @@
                         </div>
 
                         <div className="pt-4 flex justify-between">
-                        <Button variant="secondary" onClick={handleBack}>이전</Button>
+                        <Button variant="secondary" onClick={handleBackBtn}>이전</Button>
                         <Button onClick={handleNext} disabled={!formData.type}>다음 단계 <ChevronRight className="w-4 h-4" /></Button>
                         </div>
                     </div>
@@ -255,8 +364,8 @@
                         </div>
 
                         <div className="pt-4 flex justify-between">
-                        <Button variant="secondary" onClick={handleBack}>이전</Button>
-                        <Button onClick={onComplete} disabled={formData.tags.length === 0}>심사 요청 완료</Button>
+                        <Button variant="secondary" onClick={handleBackBtn}>이전</Button>
+                        <Button onClick={() => onComplete(formData)} disabled={formData.tags.length === 0}>심사 요청 완료</Button>
                         </div>
                     </div>
                     )}
@@ -265,8 +374,8 @@
             );
         };
 
-        // 3. Pending Review
-        const PendingView = ({ onApprove }) => (
+        // 3. Pending Review (Waiting Screen for Professionals)
+        const PendingView = ({ onSimulateApprove, onHome }) => (
             <div className="min-h-screen flex flex-col items-center justify-center p-6 text-center animate-fade-in">
                 <div className="bg-white max-w-md w-full rounded-2xl shadow-xl p-10 space-y-6">
                 <div className="w-20 h-20 bg-indigo-50 rounded-full flex items-center justify-center mx-auto animate-pulse">
@@ -274,24 +383,150 @@
                 </div>
                 <h2 className="text-2xl font-bold text-slate-900">심사가 진행 중입니다</h2>
                 <p className="text-slate-600">
-                    제출해주신 서류를 검토하고 있습니다.<br/>
-                    통상 영업일 기준 24시간 이내에 승인 결과가<br/>
-                    메일과 알림톡으로 발송됩니다.
+                    관리자가 제출해주신 서류를 검토하고 있습니다.<br/>
+                    통상 영업일 기준 24시간 이내에 결과가 통보됩니다.
                 </p>
-                <div className="border-t pt-6 mt-6">
-                    <p className="text-xs text-slate-400 mb-4">[데모용] 관리자가 승인했다고 가정합니다</p>
-                    <Button onClick={onApprove} className="w-full bg-green-600 hover:bg-green-700">
-                    관리자 승인 처리 (Simulate)
+                <div className="border-t pt-6 mt-6 space-y-3">
+                    <Button onClick={onSimulateApprove} className="w-full bg-slate-800 hover:bg-slate-900">
+                        빠른 승인 (테스트용)
                     </Button>
+                    <button onClick={onHome} className="text-sm text-slate-400 hover:text-slate-600 underline">
+                        첫 화면으로 돌아가기
+                    </button>
+                    <p className="text-xs text-indigo-400 mt-2">
+                        * 실제로는 관리자가 '관리자 페이지'에서 승인해야 합니다.
+                    </p>
                 </div>
                 </div>
             </div>
         );
 
+        // 5. Admin Dashboard (New Feature)
+        const AdminDashboard = ({ users, onApproveUser, onLogout }) => {
+            const pendingUsers = users.filter(u => u.status === 'pending');
+            const approvedUsers = users.filter(u => u.status === 'active' && u.role !== 'admin');
+
+            return (
+                <div className="min-h-screen bg-slate-100 flex">
+                    {/* Sidebar */}
+                    <div className="w-64 bg-slate-900 text-white p-6 flex flex-col justify-between">
+                        <div>
+                            <h1 className="text-xl font-bold mb-8 flex items-center gap-2">
+                                <Shield className="w-6 h-6" /> Admin
+                            </h1>
+                            <nav className="space-y-2">
+                                <div className="px-4 py-3 rounded-lg bg-indigo-800 text-white font-medium flex items-center gap-3">
+                                    <Users className="w-5 h-5" /> 회원 관리
+                                </div>
+                                <div className="px-4 py-3 rounded-lg text-slate-400 hover:bg-slate-800 flex items-center gap-3 cursor-not-allowed">
+                                    <Settings className="w-5 h-5" /> 설정 (준비중)
+                                </div>
+                            </nav>
+                        </div>
+                        <button onClick={onLogout} className="text-sm text-slate-400 hover:text-white flex items-center gap-2">
+                            로그아웃
+                        </button>
+                    </div>
+
+                    {/* Content */}
+                    <div className="flex-1 p-8 overflow-y-auto">
+                        <header className="flex justify-between items-center mb-8">
+                            <h2 className="text-2xl font-bold text-slate-800">가입 신청 현황</h2>
+                            <div className="bg-white px-4 py-2 rounded-lg shadow-sm text-sm text-slate-600">
+                                대기 중: <span className="text-red-600 font-bold">{pendingUsers.length}</span>명
+                            </div>
+                        </header>
+
+                        <div className="space-y-8">
+                            {/* Pending List */}
+                            <section>
+                                <h3 className="text-lg font-semibold text-slate-700 mb-4 flex items-center gap-2">
+                                    <Clock className="w-5 h-5 text-orange-500" /> 승인 대기 목록
+                                </h3>
+                                {pendingUsers.length === 0 ? (
+                                    <div className="bg-white p-8 rounded-xl text-center text-slate-400 border border-slate-200">
+                                        현재 대기 중인 신청이 없습니다.
+                                    </div>
+                                ) : (
+                                    <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+                                        <table className="w-full text-left">
+                                            <thead className="bg-slate-50 border-b border-slate-200">
+                                                <tr>
+                                                    <th className="p-4 text-sm font-medium text-slate-500">이메일</th>
+                                                    <th className="p-4 text-sm font-medium text-slate-500">전문직 종류</th>
+                                                    <th className="p-4 text-sm font-medium text-slate-500">휴대폰</th>
+                                                    <th className="p-4 text-sm font-medium text-slate-500">전문 분야</th>
+                                                    <th className="p-4 text-sm font-medium text-slate-500 text-right">관리</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody className="divide-y divide-slate-100">
+                                                {pendingUsers.map(user => (
+                                                    <tr key={user.email} className="hover:bg-slate-50">
+                                                        <td className="p-4 font-medium">{user.email}</td>
+                                                        <td className="p-4"><span className="bg-indigo-50 text-indigo-700 px-2 py-1 rounded text-xs font-bold">{user.type}</span></td>
+                                                        <td className="p-4 text-slate-500">{user.phone}</td>
+                                                        <td className="p-4 text-slate-500 text-sm">{user.tags.join(', ')}</td>
+                                                        <td className="p-4 text-right">
+                                                            <div className="flex justify-end gap-2">
+                                                                <Button variant="success" className="px-3 py-1.5 text-xs h-auto" onClick={() => onApproveUser(user.email)}>승인</Button>
+                                                                <Button variant="danger" className="px-3 py-1.5 text-xs h-auto" disabled>반려</Button>
+                                                            </div>
+                                                        </td>
+                                                    </tr>
+                                                ))}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                )}
+                            </section>
+
+                            {/* Approved List */}
+                            <section>
+                                <h3 className="text-lg font-semibold text-slate-700 mb-4 flex items-center gap-2">
+                                    <CheckCircle className="w-5 h-5 text-green-600" /> 활동 중인 전문가
+                                </h3>
+                                <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+                                    <table className="w-full text-left">
+                                        <thead className="bg-slate-50 border-b border-slate-200">
+                                            <tr>
+                                                <th className="p-4 text-sm font-medium text-slate-500">이메일</th>
+                                                <th className="p-4 text-sm font-medium text-slate-500">전문직 종류</th>
+                                                <th className="p-4 text-sm font-medium text-slate-500">상태</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody className="divide-y divide-slate-100">
+                                            {approvedUsers.map(user => (
+                                                <tr key={user.email}>
+                                                    <td className="p-4 text-slate-700">{user.email}</td>
+                                                    <td className="p-4 text-slate-600">{user.type}</td>
+                                                    <td className="p-4"><span className="text-green-600 text-sm font-medium">활동중</span></td>
+                                                </tr>
+                                            ))}
+                                            {approvedUsers.length === 0 && (
+                                                <tr><td colSpan="3" className="p-6 text-center text-slate-400">아직 승인된 전문가가 없습니다.</td></tr>
+                                            )}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </section>
+                        </div>
+                    </div>
+                </div>
+            );
+        };
+
         // 4. Dashboard (Post-Join)
-        const Dashboard = ({ onLogout }) => {
+        const Dashboard = ({ onLogout, currentUser }) => {
             const [activeTab, setActiveTab] = useState('home');
             const [sidebarOpen, setSidebarOpen] = useState(false);
+            
+            // --- Support/Communication State ---
+            const [showInquiryForm, setShowInquiryForm] = useState(false);
+            const [inquiries, setInquiries] = useState([
+                { id: 1, category: '세미나/강연', title: '5월 스타트업 법률 세미나 제안', date: '2024.05.20', status: '답변완료' },
+                { id: 2, category: '정산 문의', title: '지난달 자문료 입금 계좌 변경 요청', date: '2024.05.15', status: '대기중' }
+            ]);
+            const [newInquiry, setNewInquiry] = useState({ category: '일반 문의', title: '', content: '' });
 
             // Mock Data
             const [profileCompletion, setProfileCompletion] = useState(40);
@@ -307,7 +542,21 @@
                 { id: 'services', label: '서비스 설정', icon: Settings },
                 { id: 'requests', label: '자문 요청', icon: Bell },
                 { id: 'settlement', label: '정산 관리', icon: DollarSign },
+                { id: 'support', label: '운영팀 소통', icon: MessageSquare },
             ];
+
+            const handleSubmitInquiry = () => {
+                if (!newInquiry.title) return;
+                setInquiries([{
+                    id: Date.now(),
+                    category: newInquiry.category,
+                    title: newInquiry.title,
+                    date: new Date().toISOString().split('T')[0].replace(/-/g, '.'),
+                    status: '대기중'
+                }, ...inquiries]);
+                setShowInquiryForm(false);
+                setNewInquiry({ category: '일반 문의', title: '', content: '' });
+            };
 
             const renderContent = () => {
                 switch (activeTab) {
@@ -315,7 +564,9 @@
                     return (
                     <div className="space-y-6 animate-fade-in">
                         <div className="flex justify-between items-center">
-                        <h2 className="text-2xl font-bold text-slate-800">안녕하세요, 김전문 변호사님!</h2>
+                        <h2 className="text-2xl font-bold text-slate-800">
+                            안녕하세요, {currentUser?.email ? currentUser.email.split('@')[0] : '김전문'} {currentUser?.type || '전문직'}님!
+                        </h2>
                         <span className="bg-green-100 text-green-800 px-3 py-1 rounded-full text-sm font-medium flex items-center gap-1">
                             <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span> 활동 중
                         </span>
@@ -444,7 +695,90 @@
                         </div>
                     </div>
                     );
-                    
+                
+                case 'support':
+                    return (
+                    <div className="space-y-6 animate-fade-in">
+                        <div className="flex justify-between items-center">
+                            <div>
+                                <h2 className="text-2xl font-bold text-slate-800">운영팀 소통 센터</h2>
+                                <p className="text-slate-500 text-sm mt-1">강의/세미나 제안 및 파트너 활동 관련 문의를 남겨주세요.</p>
+                            </div>
+                            <Button onClick={() => setShowInquiryForm(true)} variant="primary">
+                                <Send className="w-4 h-4" /> 새 문의/제안
+                            </Button>
+                        </div>
+
+                        {/* Support Form Modal/View */}
+                        {showInquiryForm && (
+                            <div className="bg-white p-6 rounded-xl border border-indigo-100 shadow-lg space-y-4 mb-6">
+                                <div className="flex justify-between items-center border-b pb-3">
+                                    <h3 className="font-bold text-lg text-indigo-900">새로운 문의 작성</h3>
+                                    <button onClick={() => setShowInquiryForm(false)} className="text-slate-400 hover:text-slate-600"><X /></button>
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">문의 유형</label>
+                                    <select 
+                                        className="w-full px-4 py-3 rounded-lg border border-gray-300 outline-none focus:ring-2 focus:ring-indigo-500 bg-white"
+                                        value={newInquiry.category}
+                                        onChange={(e) => setNewInquiry({...newInquiry, category: e.target.value})}
+                                    >
+                                        <option>세미나/강연 제안</option>
+                                        <option>프로필/정보 수정 요청</option>
+                                        <option>정산 문의</option>
+                                        <option>일반 문의</option>
+                                    </select>
+                                </div>
+                                <Input 
+                                    label="제목" 
+                                    placeholder="예: 6월 스타트업 절세 전략 세미나 제안합니다." 
+                                    value={newInquiry.title}
+                                    onChange={(e) => setNewInquiry({...newInquiry, title: e.target.value})}
+                                />
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">내용</label>
+                                    <textarea 
+                                        className="w-full px-4 py-3 rounded-lg border border-gray-300 h-32 outline-none focus:ring-2 focus:ring-indigo-500 resize-none"
+                                        placeholder="제안하시려는 세미나의 주제나 문의 내용을 자세히 적어주세요."
+                                        value={newInquiry.content}
+                                        onChange={(e) => setNewInquiry({...newInquiry, content: e.target.value})}
+                                    ></textarea>
+                                </div>
+                                <div className="flex justify-end gap-2 pt-2">
+                                    <Button variant="secondary" onClick={() => setShowInquiryForm(false)}>취소</Button>
+                                    <Button variant="primary" onClick={handleSubmitInquiry}>등록하기</Button>
+                                </div>
+                            </div>
+                        )}
+
+                        {/* Inquiry List */}
+                        <div className="space-y-3">
+                            {inquiries.map(item => (
+                                <div key={item.id} className="bg-white p-5 rounded-xl border border-slate-200 hover:border-indigo-300 transition-all">
+                                    <div className="flex justify-between items-start">
+                                        <div className="flex items-center gap-3 mb-2">
+                                            <span className={`px-2 py-1 rounded text-xs font-bold ${item.category === '세미나/강연' ? 'bg-purple-100 text-purple-700' : 'bg-slate-100 text-slate-600'}`}>
+                                                {item.category}
+                                            </span>
+                                            <span className="text-xs text-slate-400">{item.date}</span>
+                                        </div>
+                                        <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${item.status === '답변완료' ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'}`}>
+                                            {item.status}
+                                        </span>
+                                    </div>
+                                    <h3 className="font-bold text-slate-800">{item.title}</h3>
+                                    {item.status === '답변완료' && (
+                                        <div className="mt-3 bg-slate-50 p-3 rounded-lg text-sm text-slate-600 border-l-4 border-green-500">
+                                            <span className="font-bold text-slate-900 block mb-1">운영팀 답변:</span>
+                                            변호사님, 제안주신 주제가 매우 흥미롭습니다. 다음주 화요일 미팅 가능하실까요?
+                                        </div>
+                                    )}
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                    );
+
                 default:
                     return <div className="p-10 text-center">준비 중인 화면입니다.</div>;
                 }
@@ -500,14 +834,123 @@
         // --- Main App Controller ---
 
         const App = () => {
-            const [currentView, setCurrentView] = useState('landing'); // landing, signup, pending, dashboard
+            const [currentView, setCurrentView] = useState('landing'); // landing, signup, pending, dashboard, login, admin
+            
+            // "Database" of users (Initialized with a demo user and admin)
+            const [users, setUsers] = useState([
+                { email: 'demo@nestorium.com', password: '1234', name: '테스트유저', type: '변호사', status: 'active', tags: ['스타트업 설립'], role: 'user' },
+                { email: 'admin@nestorium.com', password: 'admin', name: '관리자', type: 'Admin', status: 'active', tags: [], role: 'admin' }
+            ]);
+            
+            // Currently logged in user
+            const [currentUser, setCurrentUser] = useState(null);
+
+            // Handlers
+            const handleSignupComplete = (formData) => {
+                // Add new user to the "database" with 'pending' status
+                const newUser = { ...formData, status: 'pending', role: 'user' };
+                setUsers([...users, newUser]);
+                // Set as current user
+                setCurrentUser(newUser);
+                setCurrentView('pending');
+            };
+
+            const handleLogin = (email, password) => {
+                const user = users.find(u => u.email === email && u.password === password);
+                
+                if (!user) {
+                    return { success: false, message: '이메일 또는 비밀번호가 일치하지 않습니다.' };
+                }
+
+                if (user.role === 'admin') {
+                    setCurrentUser(user);
+                    setCurrentView('admin');
+                    return { success: true };
+                }
+
+                if (user.status === 'pending') {
+                     // For demo purposes, we allow them to see the Pending View again
+                    setCurrentUser(user);
+                    setCurrentView('pending');
+                    return { success: true };
+                }
+
+                if (user.status === 'active') {
+                    setCurrentUser(user);
+                    setCurrentView('dashboard');
+                    return { success: true };
+                }
+                
+                return { success: false, message: '알 수 없는 오류가 발생했습니다.' };
+            };
+
+            const handleLogout = () => {
+                setCurrentUser(null);
+                setCurrentView('landing');
+            };
+
+            // Admin Actions
+            const handleApproveUser = (email) => {
+                setUsers(users.map(u => 
+                    u.email === email ? { ...u, status: 'active' } : u
+                ));
+            };
+
+            // Simulated action from Pending View
+            const handleSimulateApprove = () => {
+                if (currentUser) {
+                    handleApproveUser(currentUser.email);
+                    // Update current user state as well
+                    const updatedUser = { ...currentUser, status: 'active' };
+                    setCurrentUser(updatedUser);
+                    setCurrentView('dashboard');
+                }
+            };
 
             return (
                 <>
-                {currentView === 'landing' && <LandingView onStart={() => setCurrentView('signup')} />}
-                {currentView === 'signup' && <SignupWizard onComplete={() => setCurrentView('pending')} />}
-                {currentView === 'pending' && <PendingView onApprove={() => setCurrentView('dashboard')} />}
-                {currentView === 'dashboard' && <Dashboard onLogout={() => setCurrentView('landing')} />}
+                {currentView === 'landing' && (
+                    <LandingView 
+                        onStart={() => setCurrentView('signup')} 
+                        onLoginClick={() => setCurrentView('login')}
+                    />
+                )}
+                
+                {currentView === 'login' && (
+                    <LoginView 
+                        onLogin={handleLogin}
+                        onBack={() => setCurrentView('landing')}
+                    />
+                )}
+
+                {currentView === 'signup' && (
+                    <SignupWizard 
+                        onComplete={handleSignupComplete} 
+                        onBack={() => setCurrentView('landing')}
+                    />
+                )}
+                
+                {currentView === 'pending' && (
+                    <PendingView 
+                        onSimulateApprove={handleSimulateApprove}
+                        onHome={() => setCurrentView('landing')}
+                    />
+                )}
+                
+                {currentView === 'dashboard' && (
+                    <Dashboard 
+                        onLogout={handleLogout} 
+                        currentUser={currentUser}
+                    />
+                )}
+
+                {currentView === 'admin' && (
+                    <AdminDashboard 
+                        users={users}
+                        onApproveUser={handleApproveUser}
+                        onLogout={handleLogout}
+                    />
+                )}
                 </>
             );
         };
