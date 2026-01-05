@@ -1,0 +1,476 @@
+import React, { useState, useEffect } from 'react';
+import { 
+  CheckCircle, 
+  User, 
+  FileText, 
+  Briefcase, 
+  DollarSign, 
+  Settings, 
+  ChevronRight, 
+  Upload, 
+  Clock, 
+  Shield, 
+  Bell, 
+  Menu,
+  X,
+  Star,
+  Phone,
+  Video
+} from 'lucide-react';
+
+// --- Components ---
+
+const Button = ({ children, onClick, variant = 'primary', className = '', disabled = false }) => {
+  const baseStyle = "px-6 py-3 rounded-lg font-medium transition-all duration-200 flex items-center justify-center gap-2";
+  const variants = {
+    primary: "bg-indigo-900 text-white hover:bg-indigo-800 disabled:bg-indigo-300",
+    secondary: "bg-white text-indigo-900 border border-indigo-200 hover:bg-indigo-50",
+    outline: "border border-gray-300 text-gray-700 hover:bg-gray-50",
+    text: "text-indigo-600 hover:bg-indigo-50 px-4 py-2"
+  };
+
+  return (
+    <button 
+      onClick={onClick} 
+      disabled={disabled}
+      className={`${baseStyle} ${variants[variant]} ${className}`}
+    >
+      {children}
+    </button>
+  );
+};
+
+const Input = ({ label, type = "text", placeholder, value, onChange }) => (
+  <div className="mb-4">
+    <label className="block text-sm font-medium text-gray-700 mb-1">{label}</label>
+    <input 
+      type={type} 
+      className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors"
+      placeholder={placeholder}
+      value={value}
+      onChange={onChange}
+    />
+  </div>
+);
+
+const StepIndicator = ({ currentStep, totalSteps }) => {
+  return (
+    <div className="flex items-center justify-center space-x-2 mb-8">
+      {[...Array(totalSteps)].map((_, idx) => (
+        <div key={idx} className="flex items-center">
+          <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold ${
+            idx + 1 <= currentStep ? 'bg-indigo-900 text-white' : 'bg-gray-200 text-gray-500'
+          }`}>
+            {idx + 1}
+          </div>
+          {idx < totalSteps - 1 && (
+            <div className={`w-12 h-1 ${idx + 1 < currentStep ? 'bg-indigo-900' : 'bg-gray-200'}`} />
+          )}
+        </div>
+      ))}
+    </div>
+  );
+};
+
+// --- Views ---
+
+// 1. Landing View
+const LandingView = ({ onStart }) => (
+  <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-center p-6 text-center">
+    <div className="max-w-3xl space-y-8">
+      <div className="inline-flex items-center justify-center p-3 bg-indigo-100 rounded-full mb-4">
+        <Shield className="w-8 h-8 text-indigo-900" />
+      </div>
+      <h1 className="text-4xl md:text-5xl font-bold text-slate-900 tracking-tight">
+        전문가를 위한 성장 파트너,<br />
+        <span className="text-indigo-900">네스토리움</span>
+      </h1>
+      <p className="text-xl text-slate-600 max-w-2xl mx-auto leading-relaxed">
+        검증된 전문가로서 기업의 성장을 돕고, 당신의 전문성을 가장 가치 있게 인정받으세요.
+        체계적인 프로세스로 당신의 성공을 지원합니다.
+      </p>
+      
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 text-left my-12">
+        {[
+          { icon: CheckCircle, title: "검증된 클라이언트", desc: "진성 고객과의 매칭" },
+          { icon: Briefcase, title: "통합 자문 시스템", desc: "법무/세무/경영 원스톱" },
+          { icon: DollarSign, title: "투명한 정산", desc: "매월 정확한 수익 정산" }
+        ].map((item, idx) => (
+          <div key={idx} className="bg-white p-6 rounded-xl shadow-sm border border-slate-100">
+            <item.icon className="w-6 h-6 text-indigo-600 mb-3" />
+            <h3 className="font-bold text-lg mb-1">{item.title}</h3>
+            <p className="text-slate-500 text-sm">{item.desc}</p>
+          </div>
+        ))}
+      </div>
+
+      <Button onClick={onStart} className="w-full md:w-auto text-lg px-12 py-4 shadow-xl shadow-indigo-200">
+        전문가로 가입하기
+      </Button>
+    </div>
+  </div>
+);
+
+// 2. Signup Wizard
+const SignupWizard = ({ onComplete }) => {
+  const [step, setStep] = useState(1);
+  const [formData, setFormData] = useState({
+    name: '', email: '', type: '', tags: []
+  });
+
+  const handleNext = () => setStep(step + 1);
+  const handleBack = () => setStep(step - 1);
+
+  return (
+    <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4">
+      <div className="bg-white max-w-2xl w-full rounded-2xl shadow-xl p-8 md:p-12">
+        <div className="mb-8 text-center">
+          <h2 className="text-2xl font-bold text-slate-900">전문가 파트너 신청</h2>
+          <p className="text-slate-500 mt-2">네스토리움 멤버십을 위한 여정을 시작합니다.</p>
+        </div>
+
+        <StepIndicator currentStep={step} totalSteps={3} />
+
+        {/* Step 1: Basic Info */}
+        {step === 1 && (
+          <div className="space-y-6 animate-fade-in">
+            <h3 className="text-lg font-semibold text-indigo-900 border-b pb-2">기본 정보 입력</h3>
+            <Input label="이메일 (ID)" placeholder="example@nestorium.com" />
+            <Input label="비밀번호" type="password" placeholder="********" />
+            <Input label="휴대폰 번호" placeholder="010-0000-0000 (본인인증)" />
+            <div className="flex items-start gap-2 text-sm text-slate-500 bg-slate-50 p-3 rounded">
+              <CheckCircle className="w-4 h-4 mt-0.5 text-green-500 flex-shrink-0" />
+              <span>휴대폰 본인인증을 통해 1차 신원 확인이 완료되었습니다.</span>
+            </div>
+            <div className="pt-4 flex justify-end">
+              <Button onClick={handleNext}>다음 단계 <ChevronRight className="w-4 h-4" /></Button>
+            </div>
+          </div>
+        )}
+
+        {/* Step 2: Credentials */}
+        {step === 2 && (
+          <div className="space-y-6 animate-fade-in">
+            <h3 className="text-lg font-semibold text-indigo-900 border-b pb-2">전문 자격 인증</h3>
+            <div className="grid grid-cols-2 gap-4">
+              {['변호사', '세무사', '회계사', '변리사', '노무사', '경영지도사'].map((type) => (
+                <button 
+                  key={type}
+                  onClick={() => setFormData({...formData, type})}
+                  className={`p-4 rounded-lg border-2 text-left transition-all ${
+                    formData.type === type 
+                    ? 'border-indigo-600 bg-indigo-50 text-indigo-900 font-bold' 
+                    : 'border-slate-200 hover:border-indigo-200'
+                  }`}
+                >
+                  {type}
+                </button>
+              ))}
+            </div>
+            
+            <div className="mt-6 border-2 border-dashed border-slate-300 rounded-xl p-8 text-center bg-slate-50 hover:bg-white transition-colors cursor-pointer">
+              <Upload className="w-8 h-8 text-slate-400 mx-auto mb-3" />
+              <p className="text-slate-600 font-medium">자격증 사본 또는 재직증명서 업로드</p>
+              <p className="text-xs text-slate-400 mt-1">PDF, JPG, PNG (최대 10MB)</p>
+            </div>
+
+            <div className="pt-4 flex justify-between">
+              <Button variant="secondary" onClick={handleBack}>이전</Button>
+              <Button onClick={handleNext} disabled={!formData.type}>다음 단계 <ChevronRight className="w-4 h-4" /></Button>
+            </div>
+          </div>
+        )}
+
+        {/* Step 3: Expertise */}
+        {step === 3 && (
+          <div className="space-y-6 animate-fade-in">
+            <h3 className="text-lg font-semibold text-indigo-900 border-b pb-2">주요 전문 분야 (최대 3개)</h3>
+            <p className="text-sm text-slate-500">클라이언트 매칭 시 가장 중요한 정보입니다.</p>
+            
+            <div className="flex flex-wrap gap-3">
+              {[
+                '스타트업 설립', '투자 계약(M&A)', '인사/노무 리스크', '법인세 절세', 
+                '지식재산권(IP)', '정부지원사업', '기업 회생', '부동산 자문'
+              ].map((tag) => (
+                <button 
+                  key={tag}
+                  onClick={() => {
+                    const newTags = formData.tags.includes(tag) 
+                      ? formData.tags.filter(t => t !== tag)
+                      : formData.tags.length < 3 ? [...formData.tags, tag] : formData.tags;
+                    setFormData({...formData, tags: newTags});
+                  }}
+                  className={`px-4 py-2 rounded-full text-sm font-medium transition-all ${
+                    formData.tags.includes(tag)
+                    ? 'bg-indigo-900 text-white shadow-md transform scale-105'
+                    : 'bg-white border border-slate-200 text-slate-600 hover:bg-slate-50'
+                  }`}
+                >
+                  {tag}
+                </button>
+              ))}
+            </div>
+
+            <div className="bg-yellow-50 p-4 rounded-lg border border-yellow-100 text-sm text-yellow-800 mt-4">
+              <span className="font-bold">Tip:</span> 전문 분야는 가입 승인 후 프로필 관리 메뉴에서 언제든 수정하실 수 있습니다.
+            </div>
+
+            <div className="pt-4 flex justify-between">
+              <Button variant="secondary" onClick={handleBack}>이전</Button>
+              <Button onClick={onComplete} disabled={formData.tags.length === 0}>심사 요청 완료</Button>
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
+
+// 3. Pending Review
+const PendingView = ({ onApprove }) => (
+  <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-center p-6 text-center">
+    <div className="bg-white max-w-md w-full rounded-2xl shadow-xl p-10 space-y-6">
+      <div className="w-20 h-20 bg-indigo-50 rounded-full flex items-center justify-center mx-auto animate-pulse">
+        <Clock className="w-10 h-10 text-indigo-600" />
+      </div>
+      <h2 className="text-2xl font-bold text-slate-900">심사가 진행 중입니다</h2>
+      <p className="text-slate-600">
+        제출해주신 서류를 검토하고 있습니다.<br/>
+        통상 영업일 기준 24시간 이내에 승인 결과가<br/>
+        메일과 알림톡으로 발송됩니다.
+      </p>
+      <div className="border-t pt-6 mt-6">
+        <p className="text-xs text-slate-400 mb-4">[데모용] 관리자가 승인했다고 가정합니다</p>
+        <Button onClick={onApprove} className="w-full bg-green-600 hover:bg-green-700">
+          관리자 승인 처리 (Simulate)
+        </Button>
+      </div>
+    </div>
+  </div>
+);
+
+// 4. Dashboard (Post-Join)
+const Dashboard = ({ onLogout }) => {
+  const [activeTab, setActiveTab] = useState('home');
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+
+  // Mock Data
+  const [profileCompletion, setProfileCompletion] = useState(40);
+  const [services, setServices] = useState([
+    { id: 1, name: '15분 전화 자문', price: 50000, active: true },
+    { id: 2, name: '화상 심층 상담 (1시간)', price: 200000, active: false },
+    { id: 3, name: '서면 검토 보고서', price: 350000, active: false },
+  ]);
+
+  const tabs = [
+    { id: 'home', label: '홈', icon: Briefcase },
+    { id: 'profile', label: '프로필 관리', icon: User },
+    { id: 'services', label: '서비스 설정', icon: Settings },
+    { id: 'requests', label: '자문 요청', icon: Bell },
+    { id: 'settlement', label: '정산 관리', icon: DollarSign },
+  ];
+
+  const renderContent = () => {
+    switch (activeTab) {
+      case 'home':
+        return (
+          <div className="space-y-6">
+            <div className="flex justify-between items-center">
+              <h2 className="text-2xl font-bold text-slate-800">안녕하세요, 김전문 변호사님!</h2>
+              <span className="bg-green-100 text-green-800 px-3 py-1 rounded-full text-sm font-medium flex items-center gap-1">
+                <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span> 활동 중
+              </span>
+            </div>
+
+            {/* Status Cards */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-100">
+                <div className="text-slate-500 text-sm mb-1">이번 달 자문 수익</div>
+                <div className="text-3xl font-bold text-indigo-900">₩ 1,250,000</div>
+              </div>
+              <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-100">
+                <div className="text-slate-500 text-sm mb-1">신규 자문 요청</div>
+                <div className="text-3xl font-bold text-slate-900 flex items-center gap-2">
+                  3건 <span className="text-xs font-normal text-red-500 bg-red-50 px-2 py-0.5 rounded-full">New</span>
+                </div>
+              </div>
+              <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-100">
+                <div className="text-slate-500 text-sm mb-1">평점</div>
+                <div className="text-3xl font-bold text-slate-900 flex items-center gap-1">
+                  4.9 <Star className="w-5 h-5 text-yellow-400 fill-yellow-400" />
+                </div>
+              </div>
+            </div>
+
+            {/* Todo Action */}
+            {profileCompletion < 100 && (
+              <div className="bg-indigo-50 border border-indigo-100 p-6 rounded-xl flex flex-col md:flex-row items-center justify-between gap-4">
+                <div>
+                  <h3 className="font-bold text-indigo-900 mb-1">프로필 완성도를 높여주세요! ({profileCompletion}%)</h3>
+                  <p className="text-sm text-indigo-700">프로필이 상세할수록 클라이언트 매칭 확률이 300% 올라갑니다.</p>
+                </div>
+                <Button variant="primary" onClick={() => setActiveTab('profile')} className="text-sm py-2">
+                  프로필 보완하기
+                </Button>
+              </div>
+            )}
+          </div>
+        );
+
+      case 'profile':
+        return (
+          <div className="space-y-6">
+            <h2 className="text-2xl font-bold text-slate-800">프로필 관리</h2>
+            <div className="bg-white p-6 rounded-xl shadow-sm border space-y-6">
+              <div className="flex items-center gap-6">
+                <div className="w-24 h-24 bg-slate-200 rounded-full flex items-center justify-center text-slate-400">
+                  <User className="w-12 h-12" />
+                </div>
+                <div>
+                  <Button variant="outline" className="text-sm py-2">사진 변경</Button>
+                </div>
+              </div>
+              <Input label="한 줄 소개 (캐치프레이즈)" placeholder="예: 스타트업 투자 계약 전문 변호사" value="스타트업 법무 리스크, 초기부터 확실하게 잡습니다." onChange={() => setProfileCompletion(Math.min(profileCompletion + 20, 100))} />
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">상세 경력 기술</label>
+                <textarea 
+                  className="w-full px-4 py-3 rounded-lg border border-gray-300 h-32"
+                  placeholder="주요 이력과 해결 가능한 문제 위주로 작성해주세요."
+                ></textarea>
+              </div>
+              <div className="flex justify-end">
+                <Button>변경사항 저장</Button>
+              </div>
+            </div>
+          </div>
+        );
+
+      case 'services':
+        return (
+          <div className="space-y-6">
+            <h2 className="text-2xl font-bold text-slate-800">서비스 설정</h2>
+            <p className="text-slate-500">제공 가능한 자문 형태와 수임료를 설정합니다.</p>
+            <div className="grid gap-4">
+              {services.map(service => (
+                <div key={service.id} className={`p-6 rounded-xl border flex items-center justify-between ${service.active ? 'bg-white border-indigo-200 shadow-sm' : 'bg-slate-50 border-slate-200 opacity-75'}`}>
+                  <div className="flex items-center gap-4">
+                    <div className={`p-3 rounded-lg ${service.active ? 'bg-indigo-100 text-indigo-700' : 'bg-slate-200 text-slate-500'}`}>
+                      {service.name.includes('전화') ? <Phone className="w-6 h-6" /> : service.name.includes('화상') ? <Video className="w-6 h-6" /> : <FileText className="w-6 h-6" />}
+                    </div>
+                    <div>
+                      <h3 className="font-bold text-lg">{service.name}</h3>
+                      <p className="text-sm text-slate-500">₩ {service.price.toLocaleString()} / 건</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-4">
+                    <button 
+                      onClick={() => {
+                        const newServices = services.map(s => s.id === service.id ? {...s, active: !s.active} : s);
+                        setServices(newServices);
+                      }}
+                      className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${service.active ? 'bg-indigo-600' : 'bg-gray-200'}`}
+                    >
+                      <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${service.active ? 'translate-x-6' : 'translate-x-1'}`} />
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        );
+
+      case 'requests':
+        return (
+          <div className="space-y-6">
+            <h2 className="text-2xl font-bold text-slate-800">자문 요청 (3)</h2>
+            <div className="space-y-4">
+              {[
+                { company: '(주)퓨처테크', type: '투자 계약 검토', date: '2024.05.20', status: '대기중' },
+                { company: '그린에너지랩', type: '법인 설립 등기', date: '2024.05.19', status: '제안완료' },
+                { company: '스튜디오 봄', type: '저작권 분쟁 상담', date: '2024.05.18', status: '대기중' },
+              ].map((req, idx) => (
+                <div key={idx} className="bg-white p-6 rounded-xl border border-slate-200 hover:border-indigo-300 transition-colors cursor-pointer group">
+                  <div className="flex justify-between items-start mb-2">
+                    <span className="bg-slate-100 text-slate-600 px-2 py-1 rounded text-xs font-bold">{req.type}</span>
+                    <span className="text-xs text-slate-400">{req.date}</span>
+                  </div>
+                  <h3 className="font-bold text-lg text-slate-900 group-hover:text-indigo-700">{req.company}</h3>
+                  <p className="text-sm text-slate-500 mt-1">상세 요청 내용이 비공개 처리되어 있습니다. 수락 시 확인 가능합니다.</p>
+                  <div className="mt-4 flex gap-2">
+                    <Button variant="primary" className="text-sm py-2 px-4">수락하기</Button>
+                    <Button variant="secondary" className="text-sm py-2 px-4">거절</Button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        );
+        
+      default:
+        return <div className="p-10 text-center">준비 중인 화면입니다.</div>;
+    }
+  };
+
+  return (
+    <div className="min-h-screen bg-slate-50 flex">
+      {/* Sidebar - Desktop */}
+      <div className={`fixed inset-y-0 left-0 z-50 w-64 bg-slate-900 text-white transform transition-transform duration-300 ease-in-out lg:translate-x-0 lg:static ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}`}>
+        <div className="p-6 flex items-center justify-between">
+          <h1 className="text-xl font-bold">Nestorium</h1>
+          <button onClick={() => setSidebarOpen(false)} className="lg:hidden text-slate-400"><X /></button>
+        </div>
+        <nav className="px-4 space-y-2 mt-4">
+          {tabs.map(tab => (
+            <button
+              key={tab.id}
+              onClick={() => { setActiveTab(tab.id); setSidebarOpen(false); }}
+              className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${activeTab === tab.id ? 'bg-indigo-600 text-white' : 'text-slate-400 hover:bg-slate-800 hover:text-white'}`}
+            >
+              <tab.icon className="w-5 h-5" />
+              <span>{tab.label}</span>
+            </button>
+          ))}
+        </nav>
+        <div className="absolute bottom-0 w-full p-4 border-t border-slate-800">
+          <button onClick={onLogout} className="flex items-center gap-2 text-slate-400 hover:text-white text-sm">
+            <span>로그아웃</span>
+          </button>
+        </div>
+      </div>
+
+      {/* Main Content */}
+      <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
+        {/* Mobile Header */}
+        <div className="lg:hidden bg-white border-b p-4 flex items-center justify-between">
+          <button onClick={() => setSidebarOpen(true)} className="text-slate-600"><Menu /></button>
+          <span className="font-bold text-slate-800">Nestorium</span>
+          <div className="w-6"></div>
+        </div>
+
+        {/* Content Area */}
+        <main className="flex-1 overflow-y-auto p-4 md:p-8">
+          <div className="max-w-4xl mx-auto">
+            {renderContent()}
+          </div>
+        </main>
+      </div>
+    </div>
+  );
+};
+
+// --- Main App Controller ---
+
+const App = () => {
+  const [currentView, setCurrentView] = useState('landing'); // landing, signup, pending, dashboard
+
+  return (
+    <>
+      {currentView === 'landing' && <LandingView onStart={() => setCurrentView('signup')} />}
+      {currentView === 'signup' && <SignupWizard onComplete={() => setCurrentView('pending')} />}
+      {currentView === 'pending' && <PendingView onApprove={() => setCurrentView('dashboard')} />}
+      {currentView === 'dashboard' && <Dashboard onLogout={() => setCurrentView('landing')} />}
+    </>
+  );
+};
+
+export default App;
