@@ -137,22 +137,43 @@
                         body: JSON.stringify({ topic: this.state.selectedTopic })
                     });
                     const data = await response.json();
-                    if (data.success) {
-                        // 실제로는 AI 이미지 생성 API를 호출해야 하지만, 여기서는 프롬프트만 표시
+                    console.log('Image API Response:', data);
+                    
+                    if (data.success && data.prompt && data.prompt.all) {
+                        // 6개의 이미지 프롬프트 생성
+                        const imagePrompts = data.prompt.all;
+                        const images = Object.keys(imagePrompts).map((key, index) => ({
+                            id: key,
+                            title: this.getImageTitle(key),
+                            prompt: imagePrompts[key],
+                            placeholder: `https://via.placeholder.com/800x500/4F46E5/FFFFFF?text=이미지${key}:+${encodeURIComponent(this.getImageTitle(key))}`
+                        }));
+                        
                         this.setState({ 
-                            generatedImages: [{ 
-                                prompt: data.prompt,
-                                placeholder: `https://via.placeholder.com/800x400/4F46E5/FFFFFF?text=${encodeURIComponent(this.state.selectedTopic.title.substring(0, 20))}`
-                            }],
+                            generatedImages: images,
                             loading: false,
                             currentStep: 'images'
                         });
                     } else {
-                        throw new Error('이미지 프롬프트 생성 실패');
+                        console.error('Invalid response structure:', data);
+                        throw new Error('이미지 프롬프트 생성 실패: ' + (data.error || '응답 형식 오류'));
                     }
                 } catch (error) {
-                    this.setState({ error: '이미지 생성에 실패했습니다.', loading: false });
+                    console.error('Image generation error:', error);
+                    this.setState({ error: '이미지 생성에 실패했습니다: ' + error.message, loading: false });
                 }
+            }
+            
+            getImageTitle(imageId) {
+                const titles = {
+                    '1': '메인/도입 - 전문적인 사무실',
+                    '2': '상담 장면 - 따뜻한 상담',
+                    '3': '주제별 특화 - 관련 업무',
+                    '4': '업무 프로세스 - 서류 작업',
+                    '5': '성공/결과 - 신뢰의 악수',
+                    '6': '프로필 - 전문가 모습'
+                };
+                return titles[imageId] || `이미지 ${imageId}`;
             }
             
             copyToClipboard() {
@@ -370,24 +391,48 @@
                         <!-- Image Display -->
                         <div class="bg-white rounded-xl shadow-lg p-8">
                             <div class="mb-6">
-                                <h2 class="text-2xl font-bold text-gray-800 mb-2">🎨 생성된 이미지</h2>
-                                <p class="text-gray-600">아래 이미지를 다운로드하여 블로그에 사용하세요</p>
+                                <h2 class="text-2xl font-bold text-gray-800 mb-2">🎨 블로그용 이미지 프롬프트 (총 6장)</h2>
+                                <p class="text-gray-600">각 이미지 프롬프트를 AI 이미지 생성 도구(Midjourney, DALL-E 등)에 복사해서 사용하세요</p>
                             </div>
                             
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
                             ${this.state.generatedImages.map((img, idx) => `
-                                <div class="mb-6">
-                                    <img src="${img.placeholder}" alt="Generated" class="w-full rounded-lg shadow-md mb-4">
-                                    <div class="bg-gray-50 p-4 rounded-lg border border-gray-200">
-                                        <p class="text-sm text-gray-600 mb-2"><strong>이미지 프롬프트:</strong></p>
-                                        <p class="text-sm text-gray-700">${img.prompt}</p>
+                                <div class="border-2 border-gray-200 rounded-xl p-4 hover:border-indigo-400 transition-colors">
+                                    <div class="mb-3">
+                                        <img src="${img.placeholder}" alt="${img.title}" class="w-full rounded-lg shadow-sm mb-2">
+                                        <h3 class="font-bold text-indigo-900 text-sm">📷 이미지 ${img.id}: ${img.title}</h3>
+                                    </div>
+                                    <div class="bg-gray-50 p-3 rounded-lg border border-gray-200">
+                                        <div class="flex justify-between items-center mb-2">
+                                            <p class="text-xs text-gray-600 font-semibold">AI 생성 프롬프트:</p>
+                                            <button onclick="navigator.clipboard.writeText('${img.prompt.replace(/'/g, "\\'")}'); alert('프롬프트가 복사되었습니다!')" 
+                                                    class="bg-indigo-600 hover:bg-indigo-700 text-white text-xs px-3 py-1 rounded">
+                                                📋 복사
+                                            </button>
+                                        </div>
+                                        <p class="text-xs text-gray-700 leading-relaxed">${img.prompt}</p>
                                     </div>
                                 </div>
                             `).join('')}
+                            </div>
                             
+                            <div class="bg-gradient-to-r from-blue-50 to-purple-50 border-l-4 border-indigo-500 p-6 mb-6 rounded-lg">
+                                <p class="text-indigo-900 font-bold mb-2">💡 사용 방법</p>
+                                <ol class="text-sm text-indigo-800 space-y-2">
+                                    <li>1️⃣ 각 프롬프트 옆의 "📋 복사" 버튼 클릭</li>
+                                    <li>2️⃣ AI 이미지 생성 도구(Midjourney, DALL-E, Stable Diffusion 등) 접속</li>
+                                    <li>3️⃣ 복사한 프롬프트 붙여넣기 후 생성</li>
+                                    <li>4️⃣ 생성된 이미지를 블로그 글의 해당 위치에 삽입</li>
+                                </ol>
+                            </div>
+
                             <div class="bg-yellow-50 border-l-4 border-yellow-400 p-4 mb-6">
-                                <p class="text-yellow-800">
-                                    <strong>💡 참고:</strong> 실제 서비스에서는 AI 이미지 생성 API를 연동하여 자동으로 이미지를 생성합니다. 
-                                    현재는 데모 버전입니다.
+                                <p class="text-yellow-800 text-sm">
+                                    <strong>✨ 추천 AI 이미지 생성 도구:</strong><br>
+                                    • Midjourney (고품질, 유료)<br>
+                                    • DALL-E 3 (ChatGPT Plus)<br>
+                                    • Stable Diffusion (무료)<br>
+                                    • Leonardo.ai (일부 무료)
                                 </p>
                             </div>
                             
