@@ -1,0 +1,417 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>승인행정사 블로그 자동 작성 도우미</title>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <style>
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        .animate-fade-in { animation: fadeIn 0.5s ease-out forwards; }
+        .animate-spin { animation: spin 1s linear infinite; }
+        @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+        
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: #f1f5f9; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+        
+        .topic-card { transition: all 0.3s ease; }
+        .topic-card:hover { transform: translateY(-4px); box-shadow: 0 10px 20px rgba(0,0,0,0.1); }
+        
+        .markdown-content h1 { font-size: 2em; font-weight: bold; margin-top: 1em; margin-bottom: 0.5em; }
+        .markdown-content h2 { font-size: 1.5em; font-weight: bold; margin-top: 1em; margin-bottom: 0.5em; }
+        .markdown-content h3 { font-size: 1.25em; font-weight: bold; margin-top: 0.8em; margin-bottom: 0.4em; }
+        .markdown-content p { margin-bottom: 1em; line-height: 1.7; }
+        .markdown-content ul, .markdown-content ol { margin-left: 2em; margin-bottom: 1em; }
+        .markdown-content li { margin-bottom: 0.5em; }
+        .markdown-content strong { font-weight: bold; }
+        .markdown-content em { font-style: italic; }
+        .markdown-content code { background: #f3f4f6; padding: 2px 6px; border-radius: 3px; font-family: monospace; }
+        .markdown-content hr { margin: 2em 0; border: 0; border-top: 2px solid #e5e7eb; }
+    </style>
+</head>
+<body class="bg-gradient-to-br from-blue-50 via-white to-purple-50 min-h-screen">
+    <div id="app"></div>
+
+    <script>
+        const API_BASE = '/api';
+        
+        // Simple Markdown to HTML converter
+        function markdownToHtml(md) {
+            let html = md;
+            
+            // Headers
+            html = html.replace(/^### (.*$)/gim, '<h3>$1</h3>');
+            html = html.replace(/^## (.*$)/gim, '<h2>$1</h2>');
+            html = html.replace(/^# (.*$)/gim, '<h1>$1</h1>');
+            
+            // Bold
+            html = html.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+            
+            // Italic
+            html = html.replace(/\*(.*?)\*/g, '<em>$1</em>');
+            
+            // Lists
+            html = html.replace(/^\d+\.\s+(.*)$/gim, '<li>$1</li>');
+            html = html.replace(/^-\s+(.*)$/gim, '<li>$1</li>');
+            html = html.replace(/(<li>.*<\/li>)/s, '<ul>$1</ul>');
+            
+            // Paragraphs
+            html = html.split('\n\n').map(para => {
+                if (!para.match(/^<[hul]/)) {
+                    return '<p>' + para.replace(/\n/g, '<br>') + '</p>';
+                }
+                return para;
+            }).join('\n');
+            
+            // Horizontal rule
+            html = html.replace(/^---$/gim, '<hr>');
+            
+            return html;
+        }
+
+        class BlogAssistant {
+            constructor() {
+                this.state = {
+                    currentStep: 'topics', // topics, content, images, preview
+                    topics: [],
+                    selectedTopic: null,
+                    generatedContent: '',
+                    generatedImages: [],
+                    loading: false,
+                    error: null
+                };
+                
+                this.render();
+                this.loadTopics();
+            }
+            
+            async loadTopics() {
+                this.setState({ loading: true, error: null });
+                try {
+                    const response = await fetch(`${API_BASE}/topics`);
+                    const data = await response.json();
+                    if (data.success) {
+                        this.setState({ topics: data.topics, loading: false });
+                    } else {
+                        throw new Error('주제 로드 실패');
+                    }
+                } catch (error) {
+                    this.setState({ error: '주제를 불러오는데 실패했습니다. 서버를 확인해주세요.', loading: false });
+                }
+            }
+            
+            async generateContent(topic) {
+                this.setState({ loading: true, error: null, selectedTopic: topic });
+                try {
+                    const response = await fetch(`${API_BASE}/generate-content`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ topic })
+                    });
+                    const data = await response.json();
+                    if (data.success) {
+                        this.setState({ 
+                            generatedContent: data.content, 
+                            loading: false,
+                            currentStep: 'content'
+                        });
+                    } else {
+                        throw new Error('콘텐츠 생성 실패');
+                    }
+                } catch (error) {
+                    this.setState({ error: '콘텐츠 생성에 실패했습니다.', loading: false });
+                }
+            }
+            
+            async generateImages() {
+                this.setState({ loading: true, error: null });
+                try {
+                    const response = await fetch(`${API_BASE}/generate-image-prompt`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ topic: this.state.selectedTopic })
+                    });
+                    const data = await response.json();
+                    if (data.success) {
+                        // 실제로는 AI 이미지 생성 API를 호출해야 하지만, 여기서는 프롬프트만 표시
+                        this.setState({ 
+                            generatedImages: [{ 
+                                prompt: data.prompt,
+                                placeholder: `https://via.placeholder.com/800x400/4F46E5/FFFFFF?text=${encodeURIComponent(this.state.selectedTopic.title.substring(0, 20))}`
+                            }],
+                            loading: false,
+                            currentStep: 'images'
+                        });
+                    } else {
+                        throw new Error('이미지 프롬프트 생성 실패');
+                    }
+                } catch (error) {
+                    this.setState({ error: '이미지 생성에 실패했습니다.', loading: false });
+                }
+            }
+            
+            copyToClipboard() {
+                const textArea = document.createElement('textarea');
+                textArea.value = this.state.generatedContent;
+                document.body.appendChild(textArea);
+                textArea.select();
+                document.execCommand('copy');
+                document.body.removeChild(textArea);
+                alert('블로그 글이 클립보드에 복사되었습니다!');
+            }
+            
+            downloadContent() {
+                const element = document.createElement('a');
+                const file = new Blob([this.state.generatedContent], {type: 'text/plain'});
+                element.href = URL.createObjectURL(file);
+                element.download = `${this.state.selectedTopic.title}.txt`;
+                document.body.appendChild(element);
+                element.click();
+                document.body.removeChild(element);
+            }
+            
+            reset() {
+                this.state = {
+                    currentStep: 'topics',
+                    topics: this.state.topics,
+                    selectedTopic: null,
+                    generatedContent: '',
+                    generatedImages: [],
+                    loading: false,
+                    error: null
+                };
+                this.render();
+            }
+            
+            setState(newState) {
+                this.state = { ...this.state, ...newState };
+                this.render();
+            }
+            
+            render() {
+                const app = document.getElementById('app');
+                app.innerHTML = `
+                    <div class="min-h-screen p-4 md:p-8">
+                        <!-- Header -->
+                        <header class="max-w-6xl mx-auto mb-8 animate-fade-in">
+                            <div class="bg-white rounded-2xl shadow-lg p-6 md:p-8 border-t-4 border-indigo-600">
+                                <div class="flex items-center justify-between">
+                                    <div>
+                                        <h1 class="text-3xl md:text-4xl font-bold text-gray-800 mb-2">
+                                            📝 승인행정사 블로그 도우미
+                                        </h1>
+                                        <p class="text-gray-600">주제 추천부터 이미지 생성까지 자동으로!</p>
+                                    </div>
+                                    ${this.state.currentStep !== 'topics' ? `
+                                        <button onclick="assistant.reset()" class="bg-gray-200 hover:bg-gray-300 text-gray-700 px-4 py-2 rounded-lg font-medium transition-colors">
+                                            🏠 처음으로
+                                        </button>
+                                    ` : ''}
+                                </div>
+                            </div>
+                        </header>
+
+                        <!-- Main Content -->
+                        <main class="max-w-6xl mx-auto">
+                            ${this.state.error ? `
+                                <div class="bg-red-50 border-l-4 border-red-500 p-4 mb-6 rounded animate-fade-in">
+                                    <p class="text-red-700">${this.state.error}</p>
+                                </div>
+                            ` : ''}
+                            
+                            ${this.renderStep()}
+                        </main>
+
+                        <!-- Footer -->
+                        <footer class="max-w-6xl mx-auto mt-12 text-center text-gray-500 text-sm">
+                            <p>© 2024 승인행정사 김수빈 사무소 | 네이버 블로그 자동화 도구</p>
+                        </footer>
+                    </div>
+                `;
+            }
+            
+            renderStep() {
+                if (this.state.loading) {
+                    return `
+                        <div class="bg-white rounded-2xl shadow-lg p-12 text-center animate-fade-in">
+                            <div class="w-16 h-16 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+                            <p class="text-gray-600 text-lg">처리 중입니다...</p>
+                        </div>
+                    `;
+                }
+                
+                switch (this.state.currentStep) {
+                    case 'topics':
+                        return this.renderTopics();
+                    case 'content':
+                        return this.renderContent();
+                    case 'images':
+                        return this.renderImages();
+                    default:
+                        return '';
+                }
+            }
+            
+            renderTopics() {
+                return `
+                    <div class="animate-fade-in">
+                        <div class="mb-6">
+                            <h2 class="text-2xl font-bold text-gray-800 mb-2">📚 오늘의 추천 주제</h2>
+                            <p class="text-gray-600">마음에 드는 주제를 선택하면 자동으로 블로그 글을 작성해드립니다</p>
+                        </div>
+                        
+                        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                            ${this.state.topics.map(topic => `
+                                <div class="topic-card bg-white rounded-xl shadow-md p-6 cursor-pointer border-2 border-transparent hover:border-indigo-500" 
+                                     onclick="assistant.generateContent(${JSON.stringify(topic).replace(/"/g, '&quot;')})">
+                                    <div class="flex items-center justify-between mb-3">
+                                        <span class="bg-indigo-100 text-indigo-700 px-3 py-1 rounded-full text-sm font-semibold">
+                                            ${topic.category}
+                                        </span>
+                                        <span class="text-2xl">📄</span>
+                                    </div>
+                                    <h3 class="text-lg font-bold text-gray-800 mb-2">${topic.title}</h3>
+                                    <p class="text-gray-600 text-sm">${topic.description}</p>
+                                </div>
+                            `).join('')}
+                        </div>
+                        
+                        ${this.state.topics.length === 0 ? `
+                            <div class="bg-white rounded-xl shadow-md p-12 text-center">
+                                <p class="text-gray-500">주제를 불러오는 중...</p>
+                            </div>
+                        ` : ''}
+                    </div>
+                `;
+            }
+            
+            renderContent() {
+                return `
+                    <div class="animate-fade-in space-y-6">
+                        <!-- Progress -->
+                        <div class="bg-white rounded-xl shadow-md p-4">
+                            <div class="flex items-center justify-between text-sm">
+                                <div class="flex items-center space-x-2">
+                                    <div class="w-8 h-8 bg-green-500 text-white rounded-full flex items-center justify-center font-bold">✓</div>
+                                    <span class="font-medium text-gray-700">주제 선택</span>
+                                </div>
+                                <div class="h-1 flex-1 bg-green-500 mx-2"></div>
+                                <div class="flex items-center space-x-2">
+                                    <div class="w-8 h-8 bg-indigo-600 text-white rounded-full flex items-center justify-center font-bold">2</div>
+                                    <span class="font-medium text-indigo-600">글 작성</span>
+                                </div>
+                                <div class="h-1 flex-1 bg-gray-200 mx-2"></div>
+                                <div class="flex items-center space-x-2">
+                                    <div class="w-8 h-8 bg-gray-200 text-gray-500 rounded-full flex items-center justify-center font-bold">3</div>
+                                    <span class="font-medium text-gray-500">이미지 생성</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Content Display -->
+                        <div class="bg-white rounded-xl shadow-lg p-8">
+                            <div class="mb-6">
+                                <h2 class="text-2xl font-bold text-gray-800 mb-2">✍️ 작성된 블로그 글</h2>
+                                <p class="text-gray-600">내용을 확인하고 수정하신 후 복사하세요</p>
+                            </div>
+                            
+                            <div class="markdown-content prose max-w-none bg-gray-50 rounded-lg p-6 border border-gray-200 mb-6" 
+                                 style="max-height: 500px; overflow-y: auto;">
+                                ${markdownToHtml(this.state.generatedContent)}
+                            </div>
+                            
+                            <div class="flex flex-wrap gap-3">
+                                <button onclick="assistant.copyToClipboard()" 
+                                        class="bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-3 rounded-lg font-medium transition-colors flex items-center gap-2">
+                                    📋 클립보드에 복사
+                                </button>
+                                <button onclick="assistant.downloadContent()" 
+                                        class="bg-gray-600 hover:bg-gray-700 text-white px-6 py-3 rounded-lg font-medium transition-colors flex items-center gap-2">
+                                    💾 텍스트 파일로 저장
+                                </button>
+                                <button onclick="assistant.generateImages()" 
+                                        class="bg-purple-600 hover:bg-purple-700 text-white px-6 py-3 rounded-lg font-medium transition-colors flex items-center gap-2">
+                                    🎨 이미지 생성하기 →
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }
+            
+            renderImages() {
+                return `
+                    <div class="animate-fade-in space-y-6">
+                        <!-- Progress -->
+                        <div class="bg-white rounded-xl shadow-md p-4">
+                            <div class="flex items-center justify-between text-sm">
+                                <div class="flex items-center space-x-2">
+                                    <div class="w-8 h-8 bg-green-500 text-white rounded-full flex items-center justify-center font-bold">✓</div>
+                                    <span class="font-medium text-gray-700">주제 선택</span>
+                                </div>
+                                <div class="h-1 flex-1 bg-green-500 mx-2"></div>
+                                <div class="flex items-center space-x-2">
+                                    <div class="w-8 h-8 bg-green-500 text-white rounded-full flex items-center justify-center font-bold">✓</div>
+                                    <span class="font-medium text-gray-700">글 작성</span>
+                                </div>
+                                <div class="h-1 flex-1 bg-green-500 mx-2"></div>
+                                <div class="flex items-center space-x-2">
+                                    <div class="w-8 h-8 bg-indigo-600 text-white rounded-full flex items-center justify-center font-bold">3</div>
+                                    <span class="font-medium text-indigo-600">이미지 생성</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Image Display -->
+                        <div class="bg-white rounded-xl shadow-lg p-8">
+                            <div class="mb-6">
+                                <h2 class="text-2xl font-bold text-gray-800 mb-2">🎨 생성된 이미지</h2>
+                                <p class="text-gray-600">아래 이미지를 다운로드하여 블로그에 사용하세요</p>
+                            </div>
+                            
+                            ${this.state.generatedImages.map((img, idx) => `
+                                <div class="mb-6">
+                                    <img src="${img.placeholder}" alt="Generated" class="w-full rounded-lg shadow-md mb-4">
+                                    <div class="bg-gray-50 p-4 rounded-lg border border-gray-200">
+                                        <p class="text-sm text-gray-600 mb-2"><strong>이미지 프롬프트:</strong></p>
+                                        <p class="text-sm text-gray-700">${img.prompt}</p>
+                                    </div>
+                                </div>
+                            `).join('')}
+                            
+                            <div class="bg-yellow-50 border-l-4 border-yellow-400 p-4 mb-6">
+                                <p class="text-yellow-800">
+                                    <strong>💡 참고:</strong> 실제 서비스에서는 AI 이미지 생성 API를 연동하여 자동으로 이미지를 생성합니다. 
+                                    현재는 데모 버전입니다.
+                                </p>
+                            </div>
+                            
+                            <div class="flex flex-wrap gap-3">
+                                <button onclick="assistant.setState({ currentStep: 'content' })" 
+                                        class="bg-gray-600 hover:bg-gray-700 text-white px-6 py-3 rounded-lg font-medium transition-colors">
+                                    ← 글 다시 보기
+                                </button>
+                                <button onclick="assistant.reset()" 
+                                        class="bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-3 rounded-lg font-medium transition-colors">
+                                    ✨ 새 글 작성하기
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }
+        }
+
+        // Initialize app
+        let assistant;
+        window.addEventListener('DOMContentLoaded', () => {
+            assistant = new BlogAssistant();
+        });
+    </script>
+</body>
+</html>
